@@ -1,5 +1,8 @@
 const multer = require('multer');
-const { MAX_FILE_SIZE, ALLOWED_FILE_TYPES } = require('../config');
+const {
+    ALLOWED_FILE_TYPES,
+    MAX_FILE_SIZE
+} = require('../config');
 
 
 const storage = multer.memoryStorage();

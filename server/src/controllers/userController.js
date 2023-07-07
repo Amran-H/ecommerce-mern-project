@@ -103,6 +103,7 @@ const processRegister = async (req, res, next) => {
         if (!image) {
             throw createError(400, 'Image is required');
         }
+
         if (image.size > MAX_FILE_SIZE) {
             throw createError(400, 'File is too large! Must be less than 2 MB');
         }
@@ -114,7 +115,11 @@ const processRegister = async (req, res, next) => {
             throw createError(409, "User with this email already exists. Please login")
         };
         // create jwt
-        const token = createJSONWebToken({ name, email, password, phone, address, imageBufferString }, jwtActivationKey, "10m");
+        const token = createJSONWebToken({
+            name, email, password, phone, address, image: imageBufferString
+        },
+            jwtActivationKey,
+            "10m");
 
         // prepare email
         const emailData = {
@@ -123,12 +128,12 @@ const processRegister = async (req, res, next) => {
             html: `
             <h2> Hello ${name}! </h2>
             <p> Please click here to  <a href="${clientURL}/api/users/activate/${token}" target="_blank">activate your account</a>  </p>
-            `
-        }
+            `,
+        };
 
         // send email with nodemailer
         try {
-            // await emailWithNodemailer(emailData);
+            await emailWithNodemailer(emailData);
         } catch (emailError) {
             next(createError(500, "Failed to send verification email"))
             return;
@@ -180,7 +185,7 @@ const activateUserAccount = async (req, res, next) => {
 const updateUserById = async (req, res, next) => {
     try {
         const userId = req.params.id;
-        const options = { password: 0 }
+        const options = { password: 0 };
         await findWithId(User, userId, options);
         const updateOptions = { new: true, runValidators: true, context: 'query' };
         let updates = {};
@@ -229,7 +234,7 @@ const updateUserById = async (req, res, next) => {
         return successResponse(res, {
             statusCode: 200,
             message: "User was updated successfully",
-            payload: { updatedUser },
+            payload: updatedUser,
         });
     } catch (error) {
         next(error)
@@ -242,5 +247,5 @@ module.exports = {
     deleteUserById,
     processRegister,
     activateUserAccount,
-    updateUserById
+    updateUserById,
 }
