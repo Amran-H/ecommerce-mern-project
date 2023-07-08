@@ -10,6 +10,7 @@ const handleLogin = async (req, res, next) => {
     try {
         // email, password
         const { email, password } = req.body;
+        console.log(req.body);
 
         // isExist
         const user = await User.findOne({ email });
@@ -38,21 +39,27 @@ const handleLogin = async (req, res, next) => {
         };
 
         // token, cookie
-        const accessToken = createJSONWebToken({ email },
+        // create jwt
+        const accessToken = createJSONWebToken({
+            user
+            // user: { email, isAdmin: user.isAdmin, _id: user._id } 
+        },
             jwtAccessKey,
-            "10m");
-        res.cookie('access_token', accessToken, {
+            "15m");
+        res.cookie('accessToken', accessToken, {
             maxAge: 15 * 60 * 1000, // 15 minutes
             httpOnly: true,
             // secure: true,
             samSite: 'none'
         });
 
+        const userWithoutPassword = await User.findOne({ email }).select("-password");
+
         // success response 
         return successResponse(res, {
             statusCode: 200,
-            message: "User was logged In successfully",
-            payload: { user },
+            message: "User logged In successfully",
+            payload: { userWithoutPassword },
         });
     } catch (error) {
         next(error);
@@ -62,12 +69,12 @@ const handleLogin = async (req, res, next) => {
 
 const handleLogout = async (req, res, next) => {
     try {
-        res.clearCookie('access_token');
+        res.clearCookie('accessToken');
 
         // success response 
         return successResponse(res, {
             statusCode: 200,
-            message: "User was logged Out successfully",
+            message: "User logged Out successfully",
             payload: {},
         });
     } catch (error) {

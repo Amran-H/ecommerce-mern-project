@@ -1,18 +1,21 @@
 const data = {
     users: [
         {
-            name: "amran hossain",
-            email: "amran2010@gmail.com",
-            password: "123456",
-            phone: "1234567890",
-            address: "feni, bangladesh"
+            name: "Amran Hossain",
+            email: "amran.h.akash@gmail.com",
+            password: "Akash@1",
+            phone: "01824516487",
+            address: "feni, Bangladesh",
+            image: "default.png"
         },
         {
-            name: "david warren",
+            name: "David Warren",
             email: "david@gmail.com",
-            password: "238467",
+            password: "David@1",
             phone: "93873267890",
-            address: "Dhaka, bangladesh"
+            address: "Georgia, USA",
+            image: "default.png"
+
         },
     ],
 };
