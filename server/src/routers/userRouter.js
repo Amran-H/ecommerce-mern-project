@@ -8,10 +8,11 @@ const {
     activateUserAccount,
     updateUserById,
     handleBanUserById,
-    handleUnbanUserById
+    handleUnbanUserById,
+    handleUpdatePassword
 } = require('../controllers/userController');
 const upload = require('../middlewares/uploadFile');
-const { validateUserRegistration } = require('../validators/auth');
+const { validateUserRegistration, validateUserPasswordUpdate } = require('../validators/auth');
 const runValidation = require('../validators');
 const { isLoggedIn, isLoggedOut, isAdmin } = require('../middlewares/auth');
 
@@ -37,5 +38,12 @@ userRouter.put("/ban-user/:id", isLoggedIn, isAdmin,
     handleBanUserById);
 userRouter.put("/unban-user/:id", isLoggedIn, isAdmin,
     handleUnbanUserById);
+userRouter.put(
+    "/update-password/:id",
+    validateUserPasswordUpdate,
+    runValidation,
+    isLoggedIn,
+    handleUpdatePassword
+);
 
 module.exports = userRouter;
