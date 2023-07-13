@@ -10,10 +10,11 @@ const {
     handleBanUserById,
     handleUnbanUserById,
     handleUpdatePassword,
-    handleForgetPassword
+    handleForgetPassword,
+    handleResetPassword
 } = require('../controllers/userController');
 const upload = require('../middlewares/uploadFile');
-const { validateUserRegistration, validateUserPasswordUpdate, validateUserForgetPassword } = require('../validators/auth');
+const { validateUserRegistration, validateUserPasswordUpdate, validateUserForgetPassword, validateUserResetPassword } = require('../validators/auth');
 const runValidation = require('../validators');
 const { isLoggedIn, isLoggedOut, isAdmin } = require('../middlewares/auth');
 
@@ -33,8 +34,13 @@ userRouter.post("/activate", isLoggedOut, activateUserAccount);
 userRouter.get("/", isLoggedIn, isAdmin, getUsers);
 userRouter.get("/:id", isLoggedIn, getUserById);
 userRouter.delete("/:id", isLoggedIn, deleteUserById);
-userRouter.put("/:id", upload.single("image"), isLoggedIn,
-    updateUserById);
+userRouter.put(
+    "/reset-password",
+    validateUserResetPassword,
+    runValidation,
+    handleResetPassword
+);
+userRouter.put("/:id", upload.single("image"), isLoggedIn, updateUserById);
 userRouter.put("/ban-user/:id", isLoggedIn, isAdmin,
     handleBanUserById);
 userRouter.put("/unban-user/:id", isLoggedIn, isAdmin,
@@ -52,5 +58,6 @@ userRouter.post(
     runValidation,
     handleForgetPassword
 );
+
 
 module.exports = userRouter;

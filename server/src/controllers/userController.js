@@ -326,7 +326,7 @@ const handleUpdatePassword = async (req, res, next) => {
         return successResponse(res, {
             statusCode: 200,
             message: "User password was Updated successfully",
-            payload: { user }
+            payload: { updatedUser }
         });
     } catch (error) {
         next(error)
@@ -375,6 +375,36 @@ const handleForgetPassword = async (req, res, next) => {
     }
 };
 
+const handleResetPassword = async (req, res, next) => {
+    try {
+        const { token, password } = req.body;
+        const decoded = jwt.verify(token, jwtResetPasswordKey);
+        if (!decoded) {
+            throw createError(400, 'Invalid or expired token')
+        };
+        const filter = { email: decoded.email };
+        const update = { password: password };
+        const options = { new: true };
+
+        const updatedUser = await User.findOneAndUpdate(
+            filter,
+            update,
+            options
+        ).select("-password");
+
+        if (!updatedUser) {
+            throw createError(400, 'Password reset fail');
+        }
+
+        return successResponse(res, {
+            statusCode: 200,
+            message: "User password reset successfully",
+        });
+    } catch (error) {
+        next(error)
+    }
+};
+
 module.exports = {
     getUsers,
     getUserById,
@@ -385,5 +415,6 @@ module.exports = {
     handleBanUserById,
     handleUnbanUserById,
     handleUpdatePassword,
-    handleForgetPassword
+    handleForgetPassword,
+    handleResetPassword
 }
