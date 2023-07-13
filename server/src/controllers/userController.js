@@ -8,7 +8,7 @@ const { successResponse } = require('./responseController');
 const { findWithId } = require('../services/findItem');
 const { deleteImage } = require('../helper/deleteImage');
 const { createJSONWebToken } = require('../helper/jsonwebtoken');
-const { jwtActivationKey, clientURL } = require('../secret');
+const { jwtActivationKey, clientURL, jwtResetPasswordKey } = require('../secret');
 const emailWithNodemailer = require('../helper/email');
 const { MAX_FILE_SIZE } = require('../config');
 
@@ -140,7 +140,7 @@ const processRegister = async (req, res, next) => {
         return successResponse(res, {
             statusCode: 200,
             message: `Please go to your ${email} for completing your registration process`,
-            payload: { token }
+            payload: { token, imageBufferString }
         });
     } catch (error) {
         next(error)
@@ -333,6 +333,48 @@ const handleUpdatePassword = async (req, res, next) => {
     }
 };
 
+const handleForgetPassword = async (req, res, next) => {
+    try {
+        const { email } = req.body;
+        const userData = await User.findOne({ email: email });
+        if (!userData) {
+            throw createError(404, 'Email is incorrect or you have not verified your email address. Please register first');
+        }
+
+        // create jwt
+        const token = createJSONWebToken({
+            email
+        },
+            jwtResetPasswordKey,
+            "10m");
+
+        // prepare email
+        const emailData = {
+            email,
+            subject: "Password reset email",
+            html: `
+            <h2> Hello ${userData.name}! </h2>
+            <p> Please click here to  <a href="${clientURL}/api/users/reset-password/${token}" target="_blank">reset your password</a>  </p>
+            `,
+        };
+
+        // send email with nodemailer
+        try {
+            await emailWithNodemailer(emailData);
+        } catch (emailError) {
+            next(createError(500, "Failed to send reset password email"))
+            return;
+        }
+        return successResponse(res, {
+            statusCode: 200,
+            message: `Please go to your ${email} for resetting the password`,
+            payload: { token }
+        });
+    } catch (error) {
+        next(error)
+    }
+};
+
 module.exports = {
     getUsers,
     getUserById,
@@ -342,5 +384,6 @@ module.exports = {
     updateUserById,
     handleBanUserById,
     handleUnbanUserById,
-    handleUpdatePassword
+    handleUpdatePassword,
+    handleForgetPassword
 }
