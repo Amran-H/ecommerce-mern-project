@@ -151,6 +151,7 @@ const handleActivateUserAccount = async (req, res, next) => {
     try {
         const token = req.body.token;
         if (!token) throw createError(404, "Token not found");
+
         try {
             const decoded = jwt.verify(token, jwtActivationKey);
             if (!decoded) throw createError(401, "Unable to verify user!");
@@ -191,22 +192,14 @@ const handleUpdateUserById = async (req, res, next) => {
         // if (req.body.name) {
         //     updates.name = req.body.name;
         // }
-        // if (req.body.password) {
-        //     updates.password = req.body.password;
-        // }
-        // if (req.body.phone) {
-        //     updates.phone = req.body.phone;
-        // }
+        //can take every field separately as shown above 
 
-        // if (req.body.address) {
-        //     updates.address = req.body.address;
-        // }
-
-        for (let key in req.body) {
-            if (['name', 'password', 'address', 'phone'].includes(key)) {
+        const allowedFields = ['name', 'password', 'address', 'phone'];
+        for (const key in req.body) {
+            if (allowedFields.includes(key)) {
                 updates[key] = req.body[key];
             }
-            else if (['email'].includes(key)) {
+            else if (key == 'email') {
                 throw createError(400, 'Email cannot be updated');
             }
         }
@@ -226,7 +219,7 @@ const handleUpdateUserById = async (req, res, next) => {
         ).select("-password");
 
         if (!updatedUser) {
-            throw createError(400, 'User was not updated successfully');
+            throw createError(400, 'User with this ID does not exist');
         }
 
         return successResponse(res, {
@@ -304,7 +297,7 @@ const handleUpdatePassword = async (req, res, next) => {
         if (!isPasswordMatch) {
             throw createError(
                 400,
-                "Old password is not correct"
+                "Old password is incorrect"
             );
         };
 
@@ -366,7 +359,7 @@ const handleForgetPassword = async (req, res, next) => {
         }
         return successResponse(res, {
             statusCode: 200,
-            message: `Please go to your ${email} for resetting the password`,
+            message: `Please go to your ${email} to reset the password`,
             payload: { token }
         });
     } catch (error) {
