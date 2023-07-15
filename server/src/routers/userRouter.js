@@ -1,12 +1,12 @@
 const express = require('express');
 
 const {
-    getUsers,
-    getUserById,
-    deleteUserById,
-    processRegister,
-    activateUserAccount,
-    updateUserById,
+    handleGetUsers,
+    handleGetUserById,
+    handleDeleteUserById,
+    handleProcessRegister,
+    handleActivateUserAccount,
+    handleUpdateUserById,
     handleBanUserById,
     handleUnbanUserById,
     handleUpdatePassword,
@@ -27,26 +27,26 @@ userRouter.post(
     isLoggedOut,
     validateUserRegistration,
     runValidation,
-    processRegister);
+    handleProcessRegister);
 
 
-userRouter.post("/activate", isLoggedOut, activateUserAccount);
-userRouter.get("/", isLoggedIn, isAdmin, getUsers);
-userRouter.get("/:id", isLoggedIn, getUserById);
-userRouter.delete("/:id", isLoggedIn, deleteUserById);
+userRouter.post("/activate", isLoggedOut, handleActivateUserAccount);
+userRouter.get("/", isLoggedIn, isAdmin, handleGetUsers);
+userRouter.get("/:id([0-9a-fA-F]{24})", isLoggedIn, handleGetUserById);
+userRouter.delete("/:id([0-9a-fA-F]{24})", isLoggedIn, handleDeleteUserById);
 userRouter.put(
     "/reset-password",
     validateUserResetPassword,
     runValidation,
     handleResetPassword
 );
-userRouter.put("/:id", upload.single("image"), isLoggedIn, updateUserById);
-userRouter.put("/ban-user/:id", isLoggedIn, isAdmin,
+userRouter.put("/:id([0-9a-fA-F]{24})", upload.single("image"), isLoggedIn, handleUpdateUserById);
+userRouter.put("/ban-user/:id([0-9a-fA-F]{24})", isLoggedIn, isAdmin,
     handleBanUserById);
-userRouter.put("/unban-user/:id", isLoggedIn, isAdmin,
+userRouter.put("/unban-user/:id([0-9a-fA-F]{24})", isLoggedIn, isAdmin,
     handleUnbanUserById);
 userRouter.put(
-    "/update-password/:id",
+    "/update-password/:id([0-9a-fA-F]{24})",
     validateUserPasswordUpdate,
     runValidation,
     isLoggedIn,

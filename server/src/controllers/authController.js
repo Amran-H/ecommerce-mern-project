@@ -10,7 +10,6 @@ const handleLogin = async (req, res, next) => {
     try {
         // email, password
         const { email, password } = req.body;
-        console.log(req.body);
 
         // isExist
         const user = await User.findOne({ email });
@@ -45,9 +44,9 @@ const handleLogin = async (req, res, next) => {
             // user: { email, isAdmin: user.isAdmin, _id: user._id } 
         },
             jwtAccessKey,
-            "1m");
+            "5m");
         res.cookie('accessToken', accessToken, {
-            maxAge: 1 * 60 * 1000, // 15 minutes
+            maxAge: 5 * 60 * 1000, // 5 minutes
             httpOnly: true,
             // secure: true,
             samSite: 'none'
@@ -65,7 +64,11 @@ const handleLogin = async (req, res, next) => {
             samSite: 'none'
         });
 
-        const userWithoutPassword = await User.findOne({ email }).select("-password");
+        /*deleting the password two methods shown below*/
+
+        // const userWithoutPassword = await User.findOne({ email }).select("-password");
+        const userWithoutPassword = user.toObject();
+        delete userWithoutPassword.password;
 
         // success response 
         return successResponse(res, {
@@ -82,6 +85,7 @@ const handleLogin = async (req, res, next) => {
 const handleLogout = async (req, res, next) => {
     try {
         res.clearCookie('accessToken');
+        res.clearCookie('refreshToken');
 
         // success response 
         return successResponse(res, {
@@ -108,9 +112,9 @@ const handleRefreshToken = async (req, res, next) => {
         const accessToken = createJSONWebToken(
             decodedToken.user,
             jwtAccessKey,
-            "1m");
+            "5m");
         res.cookie('accessToken', accessToken, {
-            maxAge: 1 * 60 * 1000, // 1 minutes
+            maxAge: 5 * 60 * 1000, // 5 minutes
             httpOnly: true,
             // secure: true,
             samSite: 'none'
@@ -151,5 +155,5 @@ module.exports = {
     handleLogin,
     handleLogout,
     handleRefreshToken,
-    handleProtectedRoute
+    handleProtectedRoute,
 };

@@ -12,7 +12,7 @@ const { jwtActivationKey, clientURL, jwtResetPasswordKey } = require('../secret'
 const emailWithNodemailer = require('../helper/email');
 const { MAX_FILE_SIZE } = require('../config');
 
-const getUsers = async (req, res, next) => {
+const handleGetUsers = async (req, res, next) => {
     try {
         const search = req.query.search || "";
         const page = Number(req.query.page) || 1;
@@ -35,7 +35,7 @@ const getUsers = async (req, res, next) => {
 
         const count = await User.find(filter).countDocuments();
 
-        if (!users) throw createError(404, "No user found!")
+        if (!users || users.length == 0) throw createError(404, "No user found!")
 
         return successResponse(res, {
             statusCode: 200,
@@ -55,7 +55,7 @@ const getUsers = async (req, res, next) => {
     }
 };
 
-const getUserById = async (req, res, next) => {
+const handleGetUserById = async (req, res, next) => {
     try {
         console.log(req.user);
         const id = req.params.id;
@@ -73,11 +73,11 @@ const getUserById = async (req, res, next) => {
     }
 };
 
-const deleteUserById = async (req, res, next) => {
+const handleDeleteUserById = async (req, res, next) => {
     try {
         const id = req.params.id;
         const options = { password: 0 };
-        const user = await findWithId(User, id, options);
+        await findWithId(User, id, options);
 
         await User.findByIdAndDelete({
             _id: id,
@@ -94,7 +94,7 @@ const deleteUserById = async (req, res, next) => {
     }
 };
 
-const processRegister = async (req, res, next) => {
+const handleProcessRegister = async (req, res, next) => {
     try {
         const { name, email, password, phone, address } = req.body;
 
@@ -140,7 +140,6 @@ const processRegister = async (req, res, next) => {
         return successResponse(res, {
             statusCode: 200,
             message: `Please go to your ${email} for completing your registration process`,
-            payload: { token, imageBufferString }
         });
     } catch (error) {
         next(error)
@@ -148,7 +147,7 @@ const processRegister = async (req, res, next) => {
 };
 
 
-const activateUserAccount = async (req, res, next) => {
+const handleActivateUserAccount = async (req, res, next) => {
     try {
         const token = req.body.token;
         if (!token) throw createError(404, "Token not found");
@@ -181,7 +180,7 @@ const activateUserAccount = async (req, res, next) => {
     }
 };
 
-const updateUserById = async (req, res, next) => {
+const handleUpdateUserById = async (req, res, next) => {
     try {
         const userId = req.params.id;
         const options = { password: 0 };
@@ -406,12 +405,12 @@ const handleResetPassword = async (req, res, next) => {
 };
 
 module.exports = {
-    getUsers,
-    getUserById,
-    deleteUserById,
-    processRegister,
-    activateUserAccount,
-    updateUserById,
+    handleGetUsers,
+    handleGetUserById,
+    handleDeleteUserById,
+    handleProcessRegister,
+    handleActivateUserAccount,
+    handleUpdateUserById,
     handleBanUserById,
     handleUnbanUserById,
     handleUpdatePassword,
