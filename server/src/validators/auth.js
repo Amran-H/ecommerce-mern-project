@@ -128,10 +128,12 @@ const validateUserResetPassword = [
 
 ];
 
+
+
 module.exports = {
     validateUserRegistration,
     validateUserLogin,
     validateUserPasswordUpdate,
     validateUserForgetPassword,
-    validateUserResetPassword
+    validateUserResetPassword,
 };
