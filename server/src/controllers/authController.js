@@ -5,6 +5,7 @@ const User = require('../models/userModel');
 const { successResponse } = require('./responseController');
 const { createJSONWebToken } = require('../helper/jsonwebtoken');
 const { jwtAccessKey, jwtRefreshKey } = require('../secret');
+const { setAccessTokenCookie, setRefreshTokenCookie } = require('../helper/cookie');
 
 const handleLogin = async (req, res, next) => {
     try {
@@ -45,24 +46,14 @@ const handleLogin = async (req, res, next) => {
         },
             jwtAccessKey,
             "5m");
-        res.cookie('accessToken', accessToken, {
-            maxAge: 5 * 60 * 1000, // 5 minutes
-            httpOnly: true,
-            // secure: true,
-            samSite: 'none'
-        });
-
+        setAccessTokenCookie(res, accessToken);
 
         const refreshToken = createJSONWebToken({
             user
         },
-            jwtRefreshKey, "7d");
-        res.cookie('refreshToken', refreshToken, {
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-            httpOnly: true,
-            // secure: true,
-            samSite: 'none'
-        });
+            jwtRefreshKey,
+            "7d");
+        setRefreshTokenCookie(res, refreshToken);
 
         /*deleting the password two methods shown below*/
 
@@ -113,12 +104,7 @@ const handleRefreshToken = async (req, res, next) => {
             decodedToken.user,
             jwtAccessKey,
             "5m");
-        res.cookie('accessToken', accessToken, {
-            maxAge: 5 * 60 * 1000, // 5 minutes
-            httpOnly: true,
-            // secure: true,
-            samSite: 'none'
-        });
+        setAccessTokenCookie(res, accessToken);
 
         return successResponse(res, {
             statusCode: 200,

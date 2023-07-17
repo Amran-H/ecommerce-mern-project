@@ -11,6 +11,8 @@ const { createJSONWebToken } = require('../helper/jsonwebtoken');
 const { jwtActivationKey, clientURL, jwtResetPasswordKey } = require('../secret');
 const emailWithNodemailer = require('../helper/email');
 const { MAX_FILE_SIZE } = require('../config');
+const checkUserExists = require('../helper/checkUserExists');
+const sendEmail = require('../helper/sendEmail');
 
 const handleGetUsers = async (req, res, next) => {
     try {
@@ -109,7 +111,7 @@ const handleProcessRegister = async (req, res, next) => {
 
         const imageBufferString = image.buffer.toString('base64');
 
-        const userExists = await User.exists({ email: email })
+        const userExists = await checkUserExists(email)
         if (userExists) {
             throw createError(409, "User with this email already exists. Please login")
         };
@@ -131,12 +133,7 @@ const handleProcessRegister = async (req, res, next) => {
         };
 
         // send email with nodemailer
-        try {
-            await emailWithNodemailer(emailData);
-        } catch (emailError) {
-            next(createError(500, "Failed to send verification email"))
-            return;
-        }
+        sendEmail(emailData)
         return successResponse(res, {
             statusCode: 200,
             message: `Please go to your ${email} for completing your registration process`,
@@ -351,12 +348,8 @@ const handleForgetPassword = async (req, res, next) => {
         };
 
         // send email with nodemailer
-        try {
-            await emailWithNodemailer(emailData);
-        } catch (emailError) {
-            next(createError(500, "Failed to send reset password email"))
-            return;
-        }
+        sendEmail(emailData)
+
         return successResponse(res, {
             statusCode: 200,
             message: `Please go to your ${email} to reset the password`,
