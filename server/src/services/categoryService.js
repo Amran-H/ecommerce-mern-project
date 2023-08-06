@@ -16,7 +16,8 @@ const getCategories = async () => {
 };
 
 const getCategory = async (slug) => {
-    return await Category.find({ slug }).select('name slug').lean();
+    const category = await Category.find({ slug }).select('name slug').lean();
+    return category;
 };
 
 const updateCategory = async (name, slug) => {
