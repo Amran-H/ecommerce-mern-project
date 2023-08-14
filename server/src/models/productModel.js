@@ -33,7 +33,7 @@ const productSchema = new Schema({
         },
     },
 
-    sold: {
+    quantity: {
         type: Number,
         required: [true, "Product quantity  is required"],
         trim: true,
@@ -43,16 +43,16 @@ const productSchema = new Schema({
                 `${props.value} is not a valid quantity! quantity must be greater then 0`
         },
     },
-    quantity: {
+    sold: {
         type: Number,
         required: [true, "sold quantity  is required"],
         trim: true,
         default: 0,
-        validate: {
-            validator: (v) => v > 0,
-            message: (props) =>
-                `${props.value} is not a valid sold quantity! sold quantity must be greater then 0`
-        },
+        // validate: {
+        //     validator: (v) => v > 0,
+        //     message: (props) =>
+        //         `${props.value} is not a valid sold quantity! sold quantity must be greater then 0`
+        // },
     },
 
     shipping: {
