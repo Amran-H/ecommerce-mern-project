@@ -4,6 +4,7 @@ const { successResponse } = require('./responseController');
 const { findWithId } = require('../services/findItem');
 const Product = require('../models/productModel');
 const { MAX_FILE_SIZE } = require('../config');
+const { createProduct } = require('../services/productService');
 
 
 const handleCreateProduct = async (req, res, next) => {
@@ -21,26 +22,16 @@ const handleCreateProduct = async (req, res, next) => {
 
         const imageBufferString = image.buffer.toString('base64');
 
-        const productExists = await Product.exists({ name: name });
-        if (productExists) {
-            throw createError(409, "Product with this name already exists.")
-        };
-        // create product
-        const product = await Product.create({
-            name: name,
-            slug: slugify(name),
-            description: description,
-            price: price,
-            quantity: quantity,
-            shipping: shipping,
-            image: imageBufferString,
-            category: category
-        })
+        const productData = {
+            name, description, price, quantity, shipping, category, imageBufferString
+        }
+
+        const product = await createProduct(productData)
 
         return successResponse(res, {
             statusCode: 200,
             message: 'Product  was created successfully',
-            payload: { product }
+            payload: product
         });
     } catch (error) {
         next(error)
