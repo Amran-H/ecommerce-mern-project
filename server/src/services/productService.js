@@ -47,8 +47,23 @@ const getProducts = async (page = 1, limit = 4) => {
 };
 
 
+const getProductBySlug = async (slug) => {
+
+    const product = await Product.find({ slug })
+        .populate('category')
+
+    if (!product) throw createError(404, 'Mo products found')
+
+    return {
+        product,
+    };
+
+};
+
+
 
 module.exports = {
     createProduct,
-    getProducts
+    getProducts,
+    getProductBySlug
 };

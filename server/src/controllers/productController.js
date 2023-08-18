@@ -4,7 +4,7 @@ const { successResponse } = require('./responseController');
 const { findWithId } = require('../services/findItem');
 const Product = require('../models/productModel');
 const { MAX_FILE_SIZE } = require('../config');
-const { createProduct, getProducts } = require('../services/productService');
+const { createProduct, getProducts, getProductBySlug } = require('../services/productService');
 
 
 const handleCreateProduct = async (req, res, next) => {
@@ -38,7 +38,6 @@ const handleCreateProduct = async (req, res, next) => {
     }
 };
 
-
 const handleGetProducts = async (req, res, next) => {
     try {
 
@@ -67,8 +66,25 @@ const handleGetProducts = async (req, res, next) => {
     }
 };
 
+const handleGetProduct = async (req, res, next) => {
+    try {
+        const { slug } = req.params;
+
+        const product = await getProductBySlug(slug);
+
+        return successResponse(res, {
+            statusCode: 200,
+            message: 'Returned single product',
+            payload: { product }
+        });
+    } catch (error) {
+        next(error)
+    }
+};
+
 
 module.exports = {
     handleCreateProduct,
-    handleGetProducts
+    handleGetProducts,
+    handleGetProduct
 };
