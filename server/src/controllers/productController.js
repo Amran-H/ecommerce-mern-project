@@ -4,7 +4,7 @@ const { successResponse } = require('./responseController');
 const { findWithId } = require('../services/findItem');
 const Product = require('../models/productModel');
 const { MAX_FILE_SIZE } = require('../config');
-const { createProduct } = require('../services/productService');
+const { createProduct, getProducts } = require('../services/productService');
 
 
 const handleCreateProduct = async (req, res, next) => {
@@ -45,12 +45,22 @@ const handleGetProducts = async (req, res, next) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 4;
 
-        const products = await Product.find({});
+        const productsData = await getProducts(page, limit);
 
         return successResponse(res, {
             statusCode: 200,
-            message: 'Products  fetched successfully',
-            payload: { products }
+            message: 'Returned all the products',
+            payload: {
+                products: productsData.products,
+                pagination: {
+                    totalPages: productsData.totalPages,
+                    currentPage: productsData.currentPage,
+                    previousPage: productsData.currentPage - 1,
+                    nextPage: productsData.currentPage + 1,
+                    totalNumberOfProducts: productsData.count,
+
+                }
+            }
         });
     } catch (error) {
         next(error)
