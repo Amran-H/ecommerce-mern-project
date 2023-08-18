@@ -39,6 +39,26 @@ const handleCreateProduct = async (req, res, next) => {
 };
 
 
+const handleGetProducts = async (req, res, next) => {
+    try {
+
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 4;
+
+        const products = await Product.find({});
+
+        return successResponse(res, {
+            statusCode: 200,
+            message: 'Products  fetched successfully',
+            payload: { products }
+        });
+    } catch (error) {
+        next(error)
+    }
+};
+
+
 module.exports = {
-    handleCreateProduct
+    handleCreateProduct,
+    handleGetProducts
 };
