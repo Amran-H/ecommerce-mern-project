@@ -4,7 +4,7 @@ const { successResponse } = require('./responseController');
 const { findWithId } = require('../services/findItem');
 const Product = require('../models/productModel');
 const { MAX_FILE_SIZE } = require('../config');
-const { createProduct, getProducts, getProductBySlug } = require('../services/productService');
+const { createProduct, getProducts, getProductBySlug, deleteProductBySlug } = require('../services/productService');
 
 
 const handleCreateProduct = async (req, res, next) => {
@@ -82,9 +82,26 @@ const handleGetProduct = async (req, res, next) => {
     }
 };
 
+const handleDeleteProduct = async (req, res, next) => {
+    try {
+        const { slug } = req.params;
+
+        const product = await deleteProductBySlug(slug);
+
+        return successResponse(res, {
+            statusCode: 200,
+            message: 'Product deleted Successfully',
+            // payload: { product }
+        });
+    } catch (error) {
+        next(error)
+    }
+};
+
 
 module.exports = {
     handleCreateProduct,
     handleGetProducts,
-    handleGetProduct
+    handleGetProduct,
+    handleDeleteProduct
 };

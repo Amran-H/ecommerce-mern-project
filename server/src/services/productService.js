@@ -60,10 +60,23 @@ const getProductBySlug = async (slug) => {
 
 };
 
+const deleteProductBySlug = async (slug) => {
+
+    const deleteProduct = await Product.findOneAndDelete({ slug });
+
+    if (!deleteProduct) throw createError(404, 'Mo product found')
+
+    return {
+        deleteProduct,
+    };
+
+};
+
 
 
 module.exports = {
     createProduct,
     getProducts,
-    getProductBySlug
+    getProductBySlug,
+    deleteProductBySlug
 };
