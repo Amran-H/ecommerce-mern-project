@@ -25,9 +25,9 @@ const createProduct = async (productData) => {
 };
 
 
-const getProducts = async (page = 1, limit = 4) => {
+const getProducts = async (page = 1, limit = 4, filter = {}) => {
 
-    const products = await Product.find({})
+    const products = await Product.find(filter)
         .populate('category')
         .skip((page - 1) * limit)
         .limit(limit)
@@ -35,7 +35,7 @@ const getProducts = async (page = 1, limit = 4) => {
 
     if (!products) throw createError(404, 'Mo products found')
 
-    const count = await Product.find({}).countDocuments();
+    const count = await Product.find(filter).countDocuments();
 
     return {
         products,

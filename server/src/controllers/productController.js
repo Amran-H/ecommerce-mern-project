@@ -40,11 +40,19 @@ const handleCreateProduct = async (req, res, next) => {
 
 const handleGetProducts = async (req, res, next) => {
     try {
-
+        const search = req.query.search || '';
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 4;
 
-        const productsData = await getProducts(page, limit);
+        const searchRegExp = new RegExp(".*" + search + ".*", "i");
+        const filter = {
+            $or: [
+                { name: { $regex: searchRegExp } },
+                // { email: { $regex: searchRegExp } },
+            ],
+        };
+
+        const productsData = await getProducts(page, limit, filter);
 
         return successResponse(res, {
             statusCode: 200,
