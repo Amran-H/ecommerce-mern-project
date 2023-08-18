@@ -4,7 +4,7 @@ const { successResponse } = require('./responseController');
 const { findWithId } = require('../services/findItem');
 const Product = require('../models/productModel');
 const { MAX_FILE_SIZE } = require('../config');
-const { createProduct, getProducts, getProductBySlug, deleteProductBySlug } = require('../services/productService');
+const { createProduct, getProducts, getProductBySlug, deleteProductBySlug, updateProductBySlug } = require('../services/productService');
 
 
 const handleCreateProduct = async (req, res, next) => {
@@ -91,7 +91,49 @@ const handleDeleteProduct = async (req, res, next) => {
         return successResponse(res, {
             statusCode: 200,
             message: 'Product deleted Successfully',
-            // payload: { product }
+        });
+    } catch (error) {
+        next(error)
+    }
+};
+
+const handleUpdateProduct = async (req, res, next) => {
+    try {
+        const { slug } = req.params;
+        const updateOptions = { new: true, runValidators: true, context: 'query' };
+        let updates = {};
+
+        // if (req.body.name) {
+        //     updates.name = req.body.name;
+        // }
+        //can take every field separately as shown above 
+
+        const allowedFields = [
+            'name',
+            'description',
+            'price',
+            'quantity',
+            'sold',
+            'shipping'
+        ];
+
+        for (const key in req.body) {
+            if (allowedFields.includes(key)) {
+                updates[key] = req.body[key];
+            }
+            // else if (key == 'email') {
+            //     throw createError(400, 'Email cannot be updated');
+            // }
+        }
+
+        const image = req.file;
+
+        const updatedProduct = await updateProductBySlug(slug, updates, image, updateOptions)
+
+        return successResponse(res, {
+            statusCode: 200,
+            message: "Product was updated successfully",
+            payload: updatedProduct,
         });
     } catch (error) {
         next(error)
@@ -103,5 +145,6 @@ module.exports = {
     handleCreateProduct,
     handleGetProducts,
     handleGetProduct,
-    handleDeleteProduct
+    handleDeleteProduct,
+    handleUpdateProduct
 };
