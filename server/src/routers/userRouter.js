@@ -41,7 +41,13 @@ userRouter.put(
     runValidation,
     handleResetPassword
 );
-userRouter.put("/:id([0-9a-fA-F]{24})", uploadUserImage.single("image"), isLoggedIn, handleUpdateUserById);
+userRouter.put(
+    "/:id([0-9a-fA-F]{24})",
+    isLoggedIn,
+    uploadUserImage.single("image"),
+    handleUpdateUserById
+);
+
 userRouter.put("/ban-user/:id([0-9a-fA-F]{24})", isLoggedIn, isAdmin,
     handleBanUserById);
 userRouter.put("/unban-user/:id([0-9a-fA-F]{24})", isLoggedIn, isAdmin,

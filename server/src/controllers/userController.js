@@ -6,13 +6,14 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/userModel');
 const { successResponse } = require('./responseController');
 const { findWithId } = require('../services/findItem');
-const { deleteImage } = require('../helper/deleteImage');
+// const { deleteImage } = require('../helper/deleteImage');
 const { createJSONWebToken } = require('../helper/jsonwebtoken');
 const { jwtActivationKey, clientURL, jwtResetPasswordKey } = require('../secret');
 const emailWithNodemailer = require('../helper/email');
 const { MAX_FILE_SIZE } = require('../config');
 const checkUserExists = require('../helper/checkUserExists');
 const sendEmail = require('../helper/sendEmail');
+const deleteImage = require('../helper/deleteImageHelper');
 
 const handleGetUsers = async (req, res, next) => {
     try {
@@ -101,13 +102,7 @@ const handleProcessRegister = async (req, res, next) => {
         const { name, email, password, phone, address } = req.body;
 
         const image = req.file.path;
-        // if (!image) {
-        //     throw createError(400, 'Image is required');
-        // }
-        // if (image.size > MAX_FILE_SIZE) {
-        //     throw createError(400, 'File is too large! Must be less than 2 MB');
-        // }
-        // const imageBufferString = image.buffer.toString('base64');
+
         if (image && image.size > 1024 * 1024 * 2) {
             throw createError(400, 'File is too large! Must be less than 2 MB');
         }
@@ -116,10 +111,21 @@ const handleProcessRegister = async (req, res, next) => {
         if (userExists) {
             throw createError(409, "User with this email already exists. Please login")
         };
+
         // create jwt
-        const token = createJSONWebToken({
-            name, email, password, phone, address, image: image
-        },
+        const tokenPayload = {
+            name,
+            email,
+            password,
+            phone,
+            address,
+        };
+
+        if (image) {
+            tokenPayload.image = image;
+        }
+
+        const token = createJSONWebToken(tokenPayload,
             jwtActivationKey,
             "10m");
 
@@ -183,7 +189,11 @@ const handleUpdateUserById = async (req, res, next) => {
     try {
         const userId = req.params.id;
         const options = { password: 0 };
-        await findWithId(User, userId, options);
+        // find the user
+        const user = await findWithId(User, userId, options);
+
+        console.log(user);
+
         const updateOptions = { new: true, runValidators: true, context: 'query' };
         let updates = {};
 
@@ -202,12 +212,13 @@ const handleUpdateUserById = async (req, res, next) => {
             }
         }
 
-        const image = req.file;
+        const image = req.file.path;
         if (image) {
             if (image.size > MAX_FILE_SIZE) {
-                throw createError(400, 'File is too large! Must be less than 2 MB');
+                throw new Error(400, 'File is too large! Must be less than 2 MB');
             }
-            updates.image = image.buffer.toString('base64');
+            updates.image = image;
+            user.image !== 'default.jpg' && deleteImage(user.image);
         }
 
         const updatedUser = await User.findByIdAndUpdate(
