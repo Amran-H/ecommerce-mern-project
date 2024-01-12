@@ -100,16 +100,17 @@ const handleProcessRegister = async (req, res, next) => {
     try {
         const { name, email, password, phone, address } = req.body;
 
-        const image = req.file;
-        if (!image) {
-            throw createError(400, 'Image is required');
-        }
-
-        if (image.size > MAX_FILE_SIZE) {
+        const image = req.file.path;
+        // if (!image) {
+        //     throw createError(400, 'Image is required');
+        // }
+        // if (image.size > MAX_FILE_SIZE) {
+        //     throw createError(400, 'File is too large! Must be less than 2 MB');
+        // }
+        // const imageBufferString = image.buffer.toString('base64');
+        if (image && image.size > 1024 * 1024 * 2) {
             throw createError(400, 'File is too large! Must be less than 2 MB');
         }
-
-        const imageBufferString = image.buffer.toString('base64');
 
         const userExists = await checkUserExists(email)
         if (userExists) {
@@ -117,7 +118,7 @@ const handleProcessRegister = async (req, res, next) => {
         };
         // create jwt
         const token = createJSONWebToken({
-            name, email, password, phone, address, image: imageBufferString
+            name, email, password, phone, address, image: image
         },
             jwtActivationKey,
             "10m");
