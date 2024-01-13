@@ -12,7 +12,7 @@ const { MAX_FILE_SIZE } = require('../config');
 const checkUserExists = require('../helper/checkUserExists');
 const sendEmail = require('../helper/sendEmail');
 const deleteImage = require('../helper/deleteImageHelper');
-// const cloudinaryService = require('../config/cloudinary');
+const cloudinary = require('../config/cloudinary');
 
 const handleGetUsers = async (req, res, next) => {
     try {
@@ -145,7 +145,7 @@ const handleProcessRegister = async (req, res, next) => {
         return successResponse(res, {
             statusCode: 200,
             message: `Please go to your ${email} for completing your registration process`,
-            // payload: token
+            payload: token
         });
     } catch (error) {
         next(error)
@@ -167,10 +167,13 @@ const handleActivateUserAccount = async (req, res, next) => {
                 throw createError(409, "User with this email already exists. Please login")
             };
 
-            // const image = decoded.image;
-            // if (image) {
-            //     const response = await cloudinaryService.uploader.upload();
-            // }
+            const image = decoded.image;
+            if (image) {
+                const response = await cloudinary.uploader.upload(image, {
+                    folder: 'E-commerce MERN stack',
+                });
+                decoded.image = response.secure_url;
+            }
 
             await User.create(decoded);
 
