@@ -1,6 +1,6 @@
 const { Schema, model } = require("mongoose");
+const { defaultImagePath } = require("../secret");
 
-// name, slug, description, price, quantity, sold, shipping, image 
 const productSchema = new Schema({
     name: {
         type: String,
@@ -61,9 +61,8 @@ const productSchema = new Schema({
 
     },
     image: {
-        type: Buffer,
-        contentType: String,
-        required: [true, "Product Image is required"],
+        type: String,
+        default: defaultImagePath,
     },
 
     category: {

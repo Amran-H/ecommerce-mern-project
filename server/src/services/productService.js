@@ -2,24 +2,20 @@ var slugify = require('slugify');
 var createError = require('http-errors');
 const Product = require('../models/productModel');
 
-const createProduct = async (productData) => {
-    const { name, description, price, quantity, shipping, category, imageBufferString } = productData;
+const createProduct = async (productData, image) => {
+    if (image && image.size > 1024 * 1024 * 2) {
+        throw createError(400, 'File is too large! Must be less than 2 MB');
+    };
+    if (image) {
+        productData.image = image;
+    };
 
-    const productExists = await Product.exists({ name: name });
+    const productExists = await Product.exists({ name: productData.name });
     if (productExists) {
         throw createError(409, "Product with this name already exists.")
     };
     // create product
-    const product = await Product.create({
-        name: name,
-        slug: slugify(name),
-        description: description,
-        price: price,
-        quantity: quantity,
-        shipping: shipping,
-        image: imageBufferString,
-        category: category
-    })
+    const product = await Product.create({ ...productData, slug: slugify(productData.name) });
 
     return product;
 };
@@ -97,8 +93,6 @@ const updateProductBySlug = async (slug, updates, image, updateOptions) => {
     return updatedProduct;
 
 };
-
-
 
 module.exports = {
     createProduct,

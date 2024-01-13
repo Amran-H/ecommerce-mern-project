@@ -6,33 +6,17 @@ const Product = require('../models/productModel');
 const { MAX_FILE_SIZE } = require('../config');
 const { createProduct, getProducts, getProductBySlug, deleteProductBySlug, updateProductBySlug } = require('../services/productService');
 
-
 const handleCreateProduct = async (req, res, next) => {
     try {
-        const { name, description, price, quantity, shipping, category } = req.body;
-        const image = req.file;
-
-        if (!image) {
-            throw createError(400, 'Image is required');
-        }
-
-        if (image.size > MAX_FILE_SIZE) {
-            throw createError(400, 'File is too large! Must be less than 2 MB');
-        }
-
-        const imageBufferString = image.buffer.toString('base64');
-
-        const productData = {
-            name, description, price, quantity, shipping, category, imageBufferString
-        }
-
-        const product = await createProduct(productData)
+        const image = req.file?.path;
+        const product = await createProduct(req.body, image)
 
         return successResponse(res, {
             statusCode: 200,
             message: 'Product  was created successfully',
             payload: product
         });
+
     } catch (error) {
         next(error)
     }
@@ -147,7 +131,6 @@ const handleUpdateProduct = async (req, res, next) => {
         next(error)
     }
 };
-
 
 module.exports = {
     handleCreateProduct,

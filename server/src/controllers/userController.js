@@ -2,18 +2,17 @@ const createError = require('http-errors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-
 const User = require('../models/userModel');
 const { successResponse } = require('./responseController');
 const { findWithId } = require('../services/findItem');
 // const { deleteImage } = require('../helper/deleteImage');
 const { createJSONWebToken } = require('../helper/jsonwebtoken');
 const { jwtActivationKey, clientURL, jwtResetPasswordKey } = require('../secret');
-const emailWithNodemailer = require('../helper/email');
 const { MAX_FILE_SIZE } = require('../config');
 const checkUserExists = require('../helper/checkUserExists');
 const sendEmail = require('../helper/sendEmail');
 const deleteImage = require('../helper/deleteImageHelper');
+// const cloudinaryService = require('../config/cloudinary');
 
 const handleGetUsers = async (req, res, next) => {
     try {
@@ -104,11 +103,10 @@ const handleProcessRegister = async (req, res, next) => {
     try {
         const { name, email, password, phone, address } = req.body;
 
-        const image = req.file.path;
-
+        const image = req.file?.path;
         if (image && image.size > 1024 * 1024 * 2) {
             throw createError(400, 'File is too large! Must be less than 2 MB');
-        }
+        };
 
         const userExists = await checkUserExists(email)
         if (userExists) {
@@ -147,6 +145,7 @@ const handleProcessRegister = async (req, res, next) => {
         return successResponse(res, {
             statusCode: 200,
             message: `Please go to your ${email} for completing your registration process`,
+            // payload: token
         });
     } catch (error) {
         next(error)
@@ -167,6 +166,11 @@ const handleActivateUserAccount = async (req, res, next) => {
             if (userExists) {
                 throw createError(409, "User with this email already exists. Please login")
             };
+
+            // const image = decoded.image;
+            // if (image) {
+            //     const response = await cloudinaryService.uploader.upload();
+            // }
 
             await User.create(decoded);
 
@@ -215,7 +219,7 @@ const handleUpdateUserById = async (req, res, next) => {
             }
         }
 
-        const image = req.file.path;
+        const image = req.file?.path;
         if (image) {
             if (image.size > MAX_FILE_SIZE) {
                 throw new Error(400, 'File is too large! Must be less than 2 MB');
