@@ -1,17 +1,12 @@
 const createError = require('http-errors');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 
 const User = require('../models/userModel');
 const { successResponse } = require('./responseController');
-const { findWithId } = require('../services/findItem');
-// const { deleteImage } = require('../helper/deleteImage');
 const { createJSONWebToken } = require('../helper/jsonwebtoken');
 const { jwtActivationKey, clientURL, jwtResetPasswordKey } = require('../secret');
-const { MAX_FILE_SIZE } = require('../config');
 const checkUserExists = require('../helper/checkUserExists');
 const sendEmail = require('../helper/sendEmail');
-const deleteImage = require('../helper/deleteImageHelper');
 const cloudinary = require('../config/cloudinary');
 const {
     handleUserAction,
@@ -19,6 +14,7 @@ const {
     findUserById,
     deleteUserById,
     updateUserById,
+    updatePasswordById,
 } = require('../services/userService');
 
 const handleGetUsers = async (req, res, next) => {
@@ -202,32 +198,10 @@ const handleManageUserStatusById = async (req, res, next) => {
 
 const handleUpdatePassword = async (req, res, next) => {
     try {
-        const { oldPassword, newPassword } = req.body;
+        const { email, oldPassword, newPassword, confirmedPassword } = req.body;
         const userId = req.params.id;
-        const user = await findWithId(User, userId);
 
-        // compare the password
-        const isPasswordMatch = await bcrypt.compare(oldPassword, user.password);
-        if (!isPasswordMatch) {
-            throw createError(
-                400,
-                "Old password is incorrect"
-            );
-        };
-
-        // const filter = { userId };
-        // const updates = { $set: { password: newPassword } }
-        // const updateOptions = { new: true }
-
-        const updatedUser = await User.findByIdAndUpdate(
-            userId,
-            { password: newPassword },
-            { new: true }
-        ).select("-password");
-
-        if (!updatedUser) {
-            throw createError(400, 'User password was not Updated successfully');
-        }
+        const updatedUser = await updatePasswordById(userId, email, oldPassword, newPassword, confirmedPassword)
 
         return successResponse(res, {
             statusCode: 200,
