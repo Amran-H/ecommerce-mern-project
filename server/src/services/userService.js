@@ -4,6 +4,9 @@ const bcrypt = require('bcryptjs');
 
 const User = require('../models/userModel');
 const deleteImage = require('../helper/deleteImageHelper');
+const { createJSONWebToken } = require('../helper/jsonwebtoken');
+const { jwtResetPasswordKey, clientURL } = require('../secret');
+const sendEmail = require('../helper/sendEmail');
 
 const findUsers = async (search, limit, page) => {
     try {
@@ -166,6 +169,38 @@ const updatePasswordById = async (userId, email, oldPassword, newPassword, confi
     }
 };
 
+const forgetPasswordByEmail = async (email) => {
+    try {
+        const userData = await User.findOne({ email: email });
+        if (!userData) {
+            throw createError(404, 'Email is incorrect or you have not verified your email address. Please register first');
+        }
+
+        // create jwt
+        const token = createJSONWebToken({
+            email
+        },
+            jwtResetPasswordKey,
+            "10m");
+
+        // prepare email
+        const emailData = {
+            email,
+            subject: "Password reset email",
+            html: `
+            <h2> Hello ${userData.name}! </h2>
+            <p> Please click here to  <a href="${clientURL}/api/users/reset-password/${token}" target="_blank">reset your password</a>  </p>
+            `,
+        };
+
+        // send email with nodemailer
+        sendEmail(emailData)
+        return token
+    } catch (error) {
+        throw error;
+    }
+};
+
 const handleUserAction = async (userId, action) => {
     try {
         let update;
@@ -200,4 +235,4 @@ const handleUserAction = async (userId, action) => {
     }
 }
 
-module.exports = { handleUserAction, findUsers, findUserById, deleteUserById, updateUserById, updatePasswordById };
+module.exports = { handleUserAction, findUsers, findUserById, deleteUserById, updateUserById, updatePasswordById, forgetPasswordByEmail };

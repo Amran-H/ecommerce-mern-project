@@ -15,6 +15,7 @@ const {
     deleteUserById,
     updateUserById,
     updatePasswordById,
+    forgetPasswordByEmail,
 } = require('../services/userService');
 
 const handleGetUsers = async (req, res, next) => {
@@ -216,35 +217,12 @@ const handleUpdatePassword = async (req, res, next) => {
 const handleForgetPassword = async (req, res, next) => {
     try {
         const { email } = req.body;
-        const userData = await User.findOne({ email: email });
-        if (!userData) {
-            throw createError(404, 'Email is incorrect or you have not verified your email address. Please register first');
-        }
-
-        // create jwt
-        const token = createJSONWebToken({
-            email
-        },
-            jwtResetPasswordKey,
-            "10m");
-
-        // prepare email
-        const emailData = {
-            email,
-            subject: "Password reset email",
-            html: `
-            <h2> Hello ${userData.name}! </h2>
-            <p> Please click here to  <a href="${clientURL}/api/users/reset-password/${token}" target="_blank">reset your password</a>  </p>
-            `,
-        };
-
-        // send email with nodemailer
-        sendEmail(emailData)
+        const token = await forgetPasswordByEmail(email)
 
         return successResponse(res, {
             statusCode: 200,
             message: `Please go to your ${email} to reset the password`,
-            payload: { token }
+            payload: token
         });
     } catch (error) {
         next(error)
