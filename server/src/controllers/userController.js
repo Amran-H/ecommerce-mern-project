@@ -17,6 +17,8 @@ const {
     handleUserAction,
     findUsers,
     findUserById,
+    deleteUserById,
+    updateUserById,
 } = require('../services/userService');
 
 const handleGetUsers = async (req, res, next) => {
@@ -62,17 +64,7 @@ const handleDeleteUserById = async (req, res, next) => {
     try {
         const id = req.params.id;
         const options = { password: 0 };
-        const user = await findWithId(User, id, options);
-
-        await User.findByIdAndDelete({
-            _id: id,
-            isAdmin: false
-        });
-
-        if (user && user?.image) {
-            await deleteImage(user.image);
-        }
-
+        await deleteUserById(id, options);
         return successResponse(res, {
             statusCode: 200,
             message: "User was deleted successfully",
@@ -181,47 +173,7 @@ const handleActivateUserAccount = async (req, res, next) => {
 const handleUpdateUserById = async (req, res, next) => {
     try {
         const userId = req.params.id;
-        const options = { password: 0 };
-        // find the user
-        const user = await findWithId(User, userId, options);
-
-        const updateOptions = { new: true, runValidators: true, context: 'query' };
-        let updates = {};
-
-        // if (req.body.name) {
-        //     updates.name = req.body.name;
-        // }
-        //can take every field separately as shown above 
-
-        const allowedFields = ['name', 'password', 'address', 'phone'];
-        for (const key in req.body) {
-            if (allowedFields.includes(key)) {
-                updates[key] = req.body[key];
-            }
-            else if (key == 'email') {
-                throw createError(400, 'Email cannot be updated');
-            }
-        }
-
-        const image = req.file?.path;
-        if (image) {
-            if (image.size > MAX_FILE_SIZE) {
-                throw new Error(400, 'File is too large! Must be less than 2 MB');
-            }
-            updates.image = image;
-            user.image !== 'default.jpg' && deleteImage(user.image);
-        }
-
-        const updatedUser = await User.findByIdAndUpdate(
-            userId,
-            updates,
-            updateOptions
-        ).select("-password");
-
-        if (!updatedUser) {
-            throw createError(400, 'User with this ID does not exist');
-        }
-
+        const updatedUser = await updateUserById(userId, req);
         return successResponse(res, {
             statusCode: 200,
             message: "User was updated successfully",

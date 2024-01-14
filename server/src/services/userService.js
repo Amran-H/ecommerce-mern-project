@@ -1,5 +1,6 @@
 const createError = require('http-errors');
 const User = require('../models/userModel');
+const deleteImage = require('../helper/deleteImageHelper');
 
 const findUsers = async (search, limit, page) => {
     try {
@@ -46,6 +47,69 @@ const findUserById = async (id, options = {}) => {
     }
 };
 
+const deleteUserById = async (id, options = {}) => {
+    try {
+        const user = await User.findByIdAndDelete({
+            _id: id,
+            isAdmin: false
+        });
+
+        // if (user && user?.image) {
+        //     await deleteImage(user.image);
+        // }
+    } catch (error) {
+        throw error;
+    }
+};
+
+const updateUserById = async (userId, req) => {
+    try {
+        const options = { password: 0 };
+        // find the user
+        const user = await findUserById(userId, options);
+
+        const updateOptions = { new: true, runValidators: true, context: 'query' };
+        let updates = {};
+
+        // if (req.body.name) {
+        //     updates.name = req.body.name;
+        // }
+        //can take every field separately as shown above 
+
+        const allowedFields = ['name', 'password', 'address', 'phone'];
+        for (const key in req.body) {
+            if (allowedFields.includes(key)) {
+                updates[key] = req.body[key];
+            }
+            else if (key == 'email') {
+                throw createError(400, 'Email cannot be updated');
+            }
+        }
+
+        const image = req.file?.path;
+        if (image) {
+            if (image.size > MAX_FILE_SIZE) {
+                throw new Error(400, 'File is too large! Must be less than 2 MB');
+            }
+            updates.image = image;
+            user.image !== 'default.jpg' && deleteImage(user.image);
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            updates,
+            updateOptions
+        ).select("-password");
+
+        if (!updatedUser) {
+            throw createError(400, 'User with this ID does not exist');
+        };
+        return updatedUser;
+    } catch (error) {
+        throw error;
+    }
+};
+
 const handleUserAction = async (userId, action) => {
     try {
         let update;
@@ -77,4 +141,4 @@ const handleUserAction = async (userId, action) => {
     }
 }
 
-module.exports = { handleUserAction, findUsers, findUserById };
+module.exports = { handleUserAction, findUsers, findUserById, deleteUserById, updateUserById };
