@@ -13,6 +13,11 @@ const checkUserExists = require('../helper/checkUserExists');
 const sendEmail = require('../helper/sendEmail');
 const deleteImage = require('../helper/deleteImageHelper');
 const cloudinary = require('../config/cloudinary');
+const {
+    handleUserAction,
+    findUsers,
+    findUserById,
+} = require('../services/userService');
 
 const handleGetUsers = async (req, res, next) => {
     try {
@@ -20,36 +25,14 @@ const handleGetUsers = async (req, res, next) => {
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 5;
 
-        const searchRegExp = new RegExp(".*" + search + ".*", "i");
-        const filter = {
-            isAdmin: { $ne: true },
-            $or: [
-                { name: { $regex: searchRegExp } },
-                { email: { $regex: searchRegExp } },
-                { phone: { $regex: searchRegExp } },
-            ],
-        };
-        const options = { password: 0 }
-
-        const users = await User.find(filter, options)
-            .limit(limit)
-            .skip((page - 1) * limit);
-
-        const count = await User.find(filter).countDocuments();
-
-        if (!users || users.length == 0) throw createError(404, "No user found!")
+        const { users, pagination } = await findUsers(search, limit, page);
 
         return successResponse(res, {
             statusCode: 200,
             message: "Users were returned successfully",
             payload: {
-                users,
-                pagination: {
-                    totalPages: Math.ceil(count / limit),
-                    currentPage: page,
-                    previousPage: page - 1 > 0 ? page - 1 : null,
-                    nextPage: page + 1 <= Math.ceil(count / limit) ? page + 1 : null,
-                },
+                users: users,
+                pagination: pagination,
             },
         });
     } catch (error) {
@@ -62,7 +45,7 @@ const handleGetUserById = async (req, res, next) => {
         console.log(req.user);
         const id = req.params.id;
         const options = { password: 0 };
-        const user = await findWithId(User, id, options);
+        const user = await findUserById(id, options);
         return successResponse(res, {
             statusCode: 200,
             message: "User was returned successfully",
@@ -249,59 +232,21 @@ const handleUpdateUserById = async (req, res, next) => {
     }
 };
 
-const handleBanUserById = async (req, res, next) => {
+const handleManageUserStatusById = async (req, res, next) => {
     try {
         const userId = req.params.id;
-        await findWithId(User, userId);
-        const updates = { isBanned: true };
-        const updateOptions = { new: true, runValidators: true, context: 'query' };
+        const action = req.body.action;
 
-        const updatedUser = await User.findByIdAndUpdate(
-            userId,
-            updates,
-            updateOptions
-        ).select("-password");
-
-        if (!updatedUser) {
-            throw createError(400, 'User was not banned successfully');
-        }
+        const successMessage = await handleUserAction(userId, action);
 
         return successResponse(res, {
             statusCode: 200,
-            message: "User was banned successfully",
+            message: successMessage,
         });
     } catch (error) {
         next(error)
     }
 };
-
-
-const handleUnbanUserById = async (req, res, next) => {
-    try {
-        const userId = req.params.id;
-        await findWithId(User, userId);
-        const updates = { isBanned: false };
-        const updateOptions = { new: true, runValidators: true, context: 'query' };
-
-        const updatedUser = await User.findByIdAndUpdate(
-            userId,
-            updates,
-            updateOptions
-        ).select("-password");
-
-        if (!updatedUser) {
-            throw createError(400, 'User was not Unbanned successfully');
-        }
-
-        return successResponse(res, {
-            statusCode: 200,
-            message: "User was Unbanned successfully",
-        });
-    } catch (error) {
-        next(error)
-    }
-};
-
 
 const handleUpdatePassword = async (req, res, next) => {
     try {
@@ -417,8 +362,7 @@ module.exports = {
     handleProcessRegister,
     handleActivateUserAccount,
     handleUpdateUserById,
-    handleBanUserById,
-    handleUnbanUserById,
+    handleManageUserStatusById,
     handleUpdatePassword,
     handleForgetPassword,
     handleResetPassword
