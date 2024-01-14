@@ -170,7 +170,7 @@ const handleActivateUserAccount = async (req, res, next) => {
             const image = decoded.image;
             if (image) {
                 const response = await cloudinary.uploader.upload(image, {
-                    folder: 'E-commerce MERN stack',
+                    folder: 'E-commerce MERN stack/users',
                 });
                 decoded.image = response.secure_url;
             }
@@ -201,8 +201,6 @@ const handleUpdateUserById = async (req, res, next) => {
         const options = { password: 0 };
         // find the user
         const user = await findWithId(User, userId, options);
-
-        console.log(user);
 
         const updateOptions = { new: true, runValidators: true, context: 'query' };
         let updates = {};

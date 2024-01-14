@@ -1,14 +1,20 @@
 const createError = require('http-errors');
 const slugify = require("slugify");
 const { successResponse } = require('./responseController');
-const { findWithId } = require('../services/findItem');
-const Product = require('../models/productModel');
-const { MAX_FILE_SIZE } = require('../config');
 const { createProduct, getProducts, getProductBySlug, deleteProductBySlug, updateProductBySlug } = require('../services/productService');
+const cloudinary = require('../config/cloudinary');
 
 const handleCreateProduct = async (req, res, next) => {
     try {
-        const image = req.file?.path;
+        let image = req.file?.path;
+
+        if (image) {
+            const response = await cloudinary.uploader.upload(image, {
+                folder: 'E-commerce MERN stack/products',
+            });
+            image = response.secure_url;
+        }
+
         const product = await createProduct(req.body, image)
 
         return successResponse(res, {
@@ -118,7 +124,7 @@ const handleUpdateProduct = async (req, res, next) => {
             // }
         }
 
-        const image = req.file;
+        const image = req.file?.path;
 
         const updatedProduct = await updateProductBySlug(slug, updates, image, updateOptions)
 
