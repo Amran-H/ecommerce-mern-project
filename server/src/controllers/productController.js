@@ -2,24 +2,16 @@ const createError = require('http-errors');
 const slugify = require("slugify");
 const { successResponse } = require('./responseController');
 const { createProduct, getProducts, getProductBySlug, deleteProductBySlug, updateProductBySlug } = require('../services/productService');
-const cloudinary = require('../config/cloudinary');
 
 const handleCreateProduct = async (req, res, next) => {
     try {
-        let image = req.file?.path;
-
-        if (image) {
-            const response = await cloudinary.uploader.upload(image, {
-                folder: 'E-commerce MERN stack/products',
-            });
-            image = response.secure_url;
-        }
+        const image = req.file?.path;
 
         const product = await createProduct(req.body, image)
 
         return successResponse(res, {
             statusCode: 200,
-            message: 'Product  was created successfully',
+            message: 'Product created successfully',
             payload: product
         });
 
@@ -84,7 +76,7 @@ const handleDeleteProduct = async (req, res, next) => {
     try {
         const { slug } = req.params;
 
-        const product = await deleteProductBySlug(slug);
+        await deleteProductBySlug(slug);
 
         return successResponse(res, {
             statusCode: 200,
@@ -98,36 +90,7 @@ const handleDeleteProduct = async (req, res, next) => {
 const handleUpdateProduct = async (req, res, next) => {
     try {
         const { slug } = req.params;
-        const updateOptions = { new: true, runValidators: true, context: 'query' };
-        let updates = {};
-
-        // if (req.body.name) {
-        //     updates.name = req.body.name;
-        // }
-        //can take every field separately as shown above 
-
-        const allowedFields = [
-            'name',
-            'description',
-            'price',
-            'quantity',
-            'sold',
-            'shipping'
-        ];
-
-        for (const key in req.body) {
-            if (allowedFields.includes(key)) {
-                updates[key] = req.body[key];
-            }
-            // else if (key == 'email') {
-            //     throw createError(400, 'Email cannot be updated');
-            // }
-        }
-
-        const image = req.file?.path;
-
-        const updatedProduct = await updateProductBySlug(slug, updates, image, updateOptions)
-
+        const updatedProduct = await updateProductBySlug(slug, req);
         return successResponse(res, {
             statusCode: 200,
             message: "Product was updated successfully",

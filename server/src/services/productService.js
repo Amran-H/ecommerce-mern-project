@@ -1,14 +1,19 @@
 var slugify = require('slugify');
 var createError = require('http-errors');
+
 const Product = require('../models/productModel');
+const cloudinary = require('../config/cloudinary');
 
 const createProduct = async (productData, image) => {
     if (image && image.size > 1024 * 1024 * 2) {
         throw createError(400, 'File is too large! Must be less than 2 MB');
     };
     if (image) {
-        productData.image = image;
-    };
+        const response = await cloudinary.uploader.upload(image, {
+            folder: 'E-commerce MERN stack/products',
+        });
+        productData.image = response.secure_url;
+    }
 
     const productExists = await Product.exists({ name: productData.name });
     if (productExists) {
@@ -58,40 +63,71 @@ const getProductBySlug = async (slug) => {
 
 const deleteProductBySlug = async (slug) => {
 
-    const deleteProduct = await Product.findOneAndDelete({ slug });
+    const product = await Product.findOneAndDelete({ slug });
 
-    if (!deleteProduct) throw createError(404, 'Mo product found')
-
-    return {
-        deleteProduct,
-    };
+    if (!product) throw createError(404, 'No product found');
+    if (product?.image) {
+        await deleteImage(product.image);
+    }
+    return product;
 
 };
 
-const updateProductBySlug = async (slug, updates, image, updateOptions) => {
+const updateProductBySlug = async (slug, req) => {
+    try {
+        const product = await Product.findOne({ slug: slug });
 
-    if (updates.name) {
-        updates.slug = slugify(updates.name)
-    }
-
-    if (image) {
-        if (image.size > MAX_FILE_SIZE) {
-            throw createError(400, 'File is too large! Must be less than 2 MB');
+        if (!product) {
+            throw createError(404, 'No product found');
         }
-        updates.image = image.buffer.toString('base64');
+
+        const updateOptions = { new: true, runValidators: true, context: 'query' };
+        let updates = {};
+
+        // if (req.body.name) {
+        //     updates.name = req.body.name;
+        // }
+        //can take every field separately as shown above 
+
+        const allowedFields = [
+            'name',
+            'description',
+            'price',
+            'quantity',
+            'sold',
+            'shipping'
+        ];
+
+        for (const key in req.body) {
+            if (allowedFields.includes(key)) {
+                if (key === 'name') {
+                    updates.slug = slugify(req.body[key])
+                };
+                updates[key] = req.body[key];
+            }
+        }
+
+        const image = req.file?.path;
+        if (image) {
+            if (image.size > MAX_FILE_SIZE) {
+                throw new Error(400, 'File is too large! Must be less than 2 MB');
+            }
+            updates.image = image;
+            product.image !== 'default.jpg' && deleteImage(product.image);
+        }
+
+        const updatedProduct = await Product.findOneAndUpdate(
+            { slug },
+            updates,
+            updateOptions
+        );
+
+        if (!updatedProduct) {
+            throw createError(400, 'Product update was not successful');
+        }
+        return updatedProduct;
+    } catch (error) {
     }
-
-    const updatedProduct = await Product.findOneAndUpdate(
-        { slug },
-        updates,
-        updateOptions
-    );
-
-    if (!updatedProduct) {
-        throw createError(400, 'Product with this slug does not exist');
-    }
-    return updatedProduct;
-
 };
 
 module.exports = {

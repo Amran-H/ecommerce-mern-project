@@ -64,9 +64,9 @@ const deleteUserById = async (id, options = {}) => {
             isAdmin: false
         });
 
-        // if (user && user?.image) {
-        //     await deleteImage(user.image);
-        // }
+        if (user && user?.image) {
+            await deleteImage(user.image);
+        }
     } catch (error) {
         if (error instanceof mongoose.Error.CastError) {
             throw createError(400, 'Invalid Id');
