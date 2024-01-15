@@ -16,6 +16,7 @@ const {
     updateUserById,
     updatePasswordById,
     forgetPasswordByEmail,
+    resetPassword,
 } = require('../services/userService');
 
 const handleGetUsers = async (req, res, next) => {
@@ -232,23 +233,7 @@ const handleForgetPassword = async (req, res, next) => {
 const handleResetPassword = async (req, res, next) => {
     try {
         const { token, password } = req.body;
-        const decoded = jwt.verify(token, jwtResetPasswordKey);
-        if (!decoded) {
-            throw createError(400, 'Invalid or expired token')
-        };
-        const filter = { email: decoded.email };
-        const update = { password: password };
-        const options = { new: true };
-
-        const updatedUser = await User.findOneAndUpdate(
-            filter,
-            update,
-            options
-        ).select("-password");
-
-        if (!updatedUser) {
-            throw createError(400, 'Password reset fail');
-        }
+        await resetPassword(token, password)
 
         return successResponse(res, {
             statusCode: 200,
