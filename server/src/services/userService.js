@@ -8,8 +8,7 @@ const deleteImage = require('../helper/deleteImageHelper');
 const { createJSONWebToken } = require('../helper/jsonwebtoken');
 const { jwtResetPasswordKey, clientURL } = require('../secret');
 const sendEmail = require('../helper/sendEmail');
-const cloudinary = require('../config/cloudinary');
-const publicIdWithoutExtensionFromUrl = require('../helper/cloudinaryHelper');
+const { publicIdWithoutExtensionFromUrl, deleteFileFromCloudinary } = require('../helper/cloudinaryHelper');
 
 const findUsers = async (search, limit, page) => {
     try {
@@ -69,14 +68,7 @@ const deleteUserById = async (id, options = {}) => {
             const publicId = await publicIdWithoutExtensionFromUrl(
                 existingUser.image
             );
-            const { result } = await cloudinary.uploader.destroy(
-                `E-commerce MERN stack/users/${publicId}`
-            );
-            if (result !== 'ok') {
-                throw new Error(
-                    'User image was not deleted successfully, Please try again'
-                );
-            }
+            deleteFileFromCloudinary("E-commerce MERN stack/users", publicId, "User")
         }
         await User.findByIdAndDelete({
             _id: id,
