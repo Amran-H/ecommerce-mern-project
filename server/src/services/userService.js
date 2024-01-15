@@ -8,6 +8,8 @@ const deleteImage = require('../helper/deleteImageHelper');
 const { createJSONWebToken } = require('../helper/jsonwebtoken');
 const { jwtResetPasswordKey, clientURL } = require('../secret');
 const sendEmail = require('../helper/sendEmail');
+const cloudinary = require('../config/cloudinary');
+const publicIdWithoutExtensionFromUrl = require('../helper/cloudinaryHelper');
 
 const findUsers = async (search, limit, page) => {
     try {
@@ -59,14 +61,27 @@ const findUserById = async (id, options = {}) => {
 
 const deleteUserById = async (id, options = {}) => {
     try {
-        const user = await User.findByIdAndDelete({
+        const existingUser = await User.findOne({
+            _id: id
+        });
+
+        if (existingUser && existingUser?.image) {
+            const publicId = await publicIdWithoutExtensionFromUrl(
+                existingUser.image
+            );
+            const { result } = await cloudinary.uploader.destroy(
+                `E-commerce MERN stack/users/${publicId}`
+            );
+            if (result !== 'ok') {
+                throw new Error(
+                    'User image was not deleted successfully, Please try again'
+                );
+            }
+        }
+        await User.findByIdAndDelete({
             _id: id,
             isAdmin: false
         });
-
-        if (user && user?.image) {
-            await deleteImage(user.image);
-        }
     } catch (error) {
         if (error instanceof mongoose.Error.CastError) {
             throw createError(400, 'Invalid Id');

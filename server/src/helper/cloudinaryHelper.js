@@ -7,4 +7,6 @@ const publicIdWithoutExtensionFromUrl = async (imageUrl) => {
     const valueWithoutExtension = lastSegment.replace(".jpg", "");
 
     return valueWithoutExtension;
-}
+};
+
+module.exports = publicIdWithoutExtensionFromUrl;
