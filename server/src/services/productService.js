@@ -26,7 +26,6 @@ const createProduct = async (productData, image) => {
     return product;
 };
 
-
 const getProducts = async (page = 1, limit = 4, filter = {}) => {
 
     const products = await Product.find(filter)
@@ -47,7 +46,6 @@ const getProducts = async (page = 1, limit = 4, filter = {}) => {
     };
 
 };
-
 
 const getProductBySlug = async (slug) => {
 
@@ -115,11 +113,13 @@ const updateProductBySlug = async (slug, req) => {
 
         const image = req.file?.path;
         if (image) {
-            if (image.size > MAX_FILE_SIZE) {
-                throw new Error(400, 'File is too large! Must be less than 2 MB');
+            if (req.file?.size > 1024 * 1024 * 2) {
+                throw createError(400, 'File is too large! Must be less than 2 MB');
             }
-            updates.image = image;
-            product.image !== 'default.jpg' && deleteImage(product.image);
+            const response = await cloudinary.uploader.upload(image, {
+                folder: "E-commerce MERN stack/products",
+            });
+            updates.image = response.secure_url;
         }
 
         const updatedProduct = await Product.findOneAndUpdate(
@@ -131,8 +131,19 @@ const updateProductBySlug = async (slug, req) => {
         if (!updatedProduct) {
             throw createError(400, 'Product update was not successful');
         }
+
+        // delete the previous product image from cloudinary
+        if (product?.image) {
+            const publicId = await publicIdWithoutExtensionFromUrl(product.image);
+            await deleteFileFromCloudinary(
+                'E-commerce MERN stack/products',
+                publicId,
+                'Product'
+            );
+        }
         return updatedProduct;
     } catch (error) {
+        throw error;
     }
 };
 
