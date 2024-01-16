@@ -3,7 +3,7 @@ var createError = require('http-errors');
 
 const Product = require('../models/productModel');
 const cloudinary = require('../config/cloudinary');
-const publicIdWithoutExtensionFromUrl = require('../helper/cloudinaryHelper');
+const { publicIdWithoutExtensionFromUrl, deleteFileFromCloudinary } = require('../helper/cloudinaryHelper');
 
 const createProduct = async (productData, image) => {
     if (image && image.size > 1024 * 1024 * 2) {
@@ -71,14 +71,7 @@ const deleteProductBySlug = async (slug) => {
             const publicId = await publicIdWithoutExtensionFromUrl(
                 existingProduct.image
             );
-            const { result } = await cloudinary.uploader.destroy(
-                `E-commerce MERN stack/products/${publicId}`
-            );
-            if (result !== 'ok') {
-                throw new Error(
-                    'Product image was not deleted successfully, Please try again'
-                );
-            }
+            deleteFileFromCloudinary("E-commerce MERN stack/products", publicId, "Product")
         }
         await Product.findOneAndDelete({ slug });
     } catch (error) {
