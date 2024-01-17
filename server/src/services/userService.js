@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const User = require('../models/userModel');
-const deleteImage = require('../helper/deleteImageHelper');
+const cloudinary = require('../config/cloudinary');
 const { createJSONWebToken } = require('../helper/jsonwebtoken');
 const { jwtResetPasswordKey, clientURL } = require('../secret');
 const sendEmail = require('../helper/sendEmail');
@@ -88,6 +88,10 @@ const updateUserById = async (userId, req) => {
         // find the user
         const user = await findUserById(userId, options);
 
+        if (!user) {
+            throw createError(404, 'No user found');
+        }
+
         const updateOptions = { new: true, runValidators: true, context: 'query' };
         let updates = {};
 
@@ -104,15 +108,17 @@ const updateUserById = async (userId, req) => {
             else if (key == 'email') {
                 throw createError(400, 'Email cannot be updated');
             }
-        }
+        };
 
         const image = req.file?.path;
         if (image) {
-            if (image.size > MAX_FILE_SIZE) {
-                throw new Error(400, 'File is too large! Must be less than 2 MB');
+            if (req.file?.size > 1024 * 1024 * 2) {
+                throw createError(400, 'File is too large! Must be less than 2 MB');
             }
-            updates.image = image;
-            user.image !== 'default.jpg' && deleteImage(user.image);
+            const response = await cloudinary.uploader.upload(image, {
+                folder: "E-commerce MERN stack/users",
+            });
+            updates.image = response.secure_url;
         }
 
         const updatedUser = await User.findByIdAndUpdate(
@@ -122,8 +128,18 @@ const updateUserById = async (userId, req) => {
         ).select("-password");
 
         if (!updatedUser) {
-            throw createError(404, 'User with this ID does not exist');
+            throw createError(404, 'User update was not successful');
         };
+
+        // delete the previous user image from cloudinary
+        if (user?.image) {
+            const publicId = await publicIdWithoutExtensionFromUrl(user.image);
+            await deleteFileFromCloudinary(
+                'E-commerce MERN stack/users',
+                publicId,
+                'User'
+            );
+        }
         return updatedUser;
     } catch (error) {
         if (error instanceof mongoose.Error.CastError) {

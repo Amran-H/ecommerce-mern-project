@@ -83,7 +83,7 @@ const updateProductBySlug = async (slug, req) => {
 
         if (!product) {
             throw createError(404, 'No product found');
-        }
+        };
 
         const updateOptions = { new: true, runValidators: true, context: 'query' };
         let updates = {};
